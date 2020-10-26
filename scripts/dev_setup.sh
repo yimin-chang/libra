@@ -14,6 +14,7 @@
 SHELLCHECK_VERSION=0.7.1
 HADOLINT_VERSION=1.17.4
 SCCACHE_VERSION=0.2.13
+#SCCACHE_GIT='https://github.com/rexhoffman/sccache.git@19fef99c15765ea73460fd9ecb209c35313eac41'
 KUBECTL_VERSION=1.18.6
 TERRAFORM_VERSION=0.12.26
 HELM_VERSION=3.2.4
@@ -301,7 +302,13 @@ function install_toolchain {
 function install_sccache {
   VERSION="$(sccache --version)"
   if [[ "$VERSION" != "sccache ""${SCCACHE_VERSION}" ]]; then
-    cargo install sccache --version="${SCCACHE_VERSION}"
+    if [[ -n "${SCCACHE_GIT}" ]]; then
+      git_repo=$( echo "$SCCACHE_VERSION" | cut -d "@" -f 1 );
+      git_hash=$( echo "$SCCACHE_VERSION" | cut -d "@" -f 2 );
+      cargo install sccache --git "$git_repo" --rev "$git_hash" --features s3;
+    else
+      cargo install sccache --version="${SCCACHE_VERSION}" --features s3;
+    fi
   fi
 }
 
@@ -564,6 +571,7 @@ if [[ "$INSTALL_BUILD_TOOLS" == "true" ]]; then
   rustup component add rustfmt
   rustup component add clippy
 
+  install_old_sccache
   install_sccache
   install_grcov
   install_pkg lcov "$PACKAGE_MANAGER"
